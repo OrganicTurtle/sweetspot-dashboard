@@ -626,7 +626,6 @@ function checkBloodSugarAlerts(v){
 }  
 
 function showSuccessPopup(){
-
   const overlay = document.getElementById('alertOverlay');
   const box = document.querySelector('.alert-box');
   const title = document.getElementById('alertTitle');
@@ -635,15 +634,14 @@ function showSuccessPopup(){
 
   overlay.style.display = 'flex';
 
-  box.style.border = '2px solid #4caf50';
-  box.style.boxShadow = '0 8px 25px rgba(76, 175, 80, 0.25)';
-  box.style.animation = 'none'; // removes shake + flash
+  box.style.border = '6px solid #4caf50';
+  box.style.boxShadow = '0 0 25px #4caf50';
+  box.style.animation = 'none'; // ✅ stops shaking/flashing
 
   title.innerText = 'Great Job!';
-  title.style.color = '#2e7d32';
+  title.style.color = '#4caf50';
 
-  message.innerText =
-    'Nice job getting your blood sugar back to a normal range. You can now use your apps freely.';
+  message.innerText = 'Nice job getting your blood sugar back to a normal range! You can now use your apps freely.';
 
   buttons.innerHTML = `
     <button onclick="closeSuccess()" style="
@@ -654,9 +652,7 @@ function showSuccessPopup(){
       border:none;
       border-radius:8px;
       font-weight:bold;
-    ">
-      OK
-    </button>
+    ">OK</button>
   `;
 }
 
@@ -754,7 +750,6 @@ document.getElementById('weightInput').addEventListener('change',e=>{
 
 </body>
 </html>
-
 
 
 
