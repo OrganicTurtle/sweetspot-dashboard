@@ -1,5 +1,4 @@
 
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -636,13 +635,15 @@ function showSuccessPopup(){
 
   overlay.style.display = 'flex';
 
-  box.style.border = '6px solid #4caf50';
-  box.style.boxShadow = '0 0 25px #4caf50';
+  box.style.border = '2px solid #4caf50';
+  box.style.boxShadow = '0 8px 25px rgba(76, 175, 80, 0.25)';
+  box.style.animation = 'none'; // removes shake + flash
 
   title.innerText = 'Great Job!';
-  title.style.color = '#4caf50';
+  title.style.color = '#2e7d32';
 
-  message.innerText = 'Nice job getting your blood sugar back to a normal range! You can now use your apps freely.';
+  message.innerText =
+    'Nice job getting your blood sugar back to a normal range. You can now use your apps freely.';
 
   buttons.innerHTML = `
     <button onclick="closeSuccess()" style="
@@ -653,16 +654,21 @@ function showSuccessPopup(){
       border:none;
       border-radius:8px;
       font-weight:bold;
-    ">OK</button>
+    ">
+      OK
+    </button>
   `;
 }
+
 
 function closeSuccess(){
   const overlay = document.getElementById('alertOverlay');
   const box = document.querySelector('.alert-box');
 
+  // restore original alert style
   box.style.border = '6px solid red';
   box.style.boxShadow = '0 0 25px red';
+  box.style.animation = 'flashBorder 0.5s infinite alternate, shake 0.12s infinite alternate';
 
   document.getElementById('alertTitle').style.color = 'red';
 
@@ -670,6 +676,7 @@ function closeSuccess(){
 
   foodIntervention = false;
 }
+
 // WEEK UPDATE
 function addWeeklyData(chart1,chart2,data,val,ref){
   const v=clamp(val);
@@ -747,5 +754,7 @@ document.getElementById('weightInput').addEventListener('change',e=>{
 
 </body>
 </html>
+
+
 
 
