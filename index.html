@@ -1,0 +1,763 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SweetSpot Web Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body { margin:0; font-family:'Segoe UI',sans-serif; background:#eef2f7; display:flex; transition:0.3s; }
+
+/* DARK MODE */
+body.dark { background:#121212; color:#eee; }
+body.dark .card { background:#1e1e1e; color:#eee; }
+body.dark header { background:#1e1e1e; }
+body.dark .sidebar { background:linear-gradient(135deg,#6a1b9a,#ab47bc); }
+body.dark input { background:#2a2a2a; color:#fff; border:1px solid #444; }
+
+.sidebar { width:220px; background:linear-gradient(135deg,#d16ba5,#8e44ad); color:white; height:100vh; padding:20px; box-sizing:border-box; }
+.nav-item { margin:15px 0; cursor:pointer; }
+.nav-item.active { font-weight:bold; text-decoration:underline; }
+
+.main { flex:1; display:flex; flex-direction:column; }
+
+header { background:white; padding:15px 20px; display:flex; justify-content:space-between; align-items:center; transition:0.3s; }
+.left-header { display:flex; align-items:center; gap:10px; cursor:pointer; }
+.profile { width:35px; height:35px; border-radius:50%; background:#ccc; }
+
+.toggle {
+  cursor:pointer;
+  padding:6px 10px;
+  border-radius:6px;
+  background:#ddd;
+  font-size:12px;
+}
+
+.content { padding:20px; display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:20px; }
+
+.card { background:white; border-radius:12px; padding:15px; box-shadow:0 3px 8px rgba(0,0,0,0.08); transition:0.3s; }
+
+input { margin-top:8px; padding:6px; width:100%; }
+button { margin-top:8px; padding:6px; cursor:pointer; }
+canvas { max-height:120px; }
+
+.screen { display:none; }
+.screen.active { display:grid; }
+.alert-overlay{
+position:fixed;
+inset:0;
+background:rgba(0,0,0,0.55);
+display:none;
+justify-content:center;
+align-items:center;
+z-index:999;
+}
+
+.alert-box{
+width:320px;
+background:white;
+border-radius:14px;
+padding:20px;
+text-align:center;
+border:6px solid red;
+animation:
+flashBorder 0.5s infinite alternate,
+shake 0.12s infinite alternate;
+box-shadow:0 0 25px red;
+}
+
+.alert-box h2{
+margin-top:0;
+color:red;
+}
+
+.alert-buttons{
+display:flex;
+gap:10px;
+margin-top:20px;
+}
+
+.alert-buttons button{
+flex:1;
+padding:10px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+}
+
+.ignore-btn{
+background:#ddd;
+}
+
+.eat-btn{
+background:#4caf50;
+color:white;
+}
+
+@keyframes flashBorder{
+0%{
+box-shadow:0 0 10px red;
+}
+
+100%{
+box-shadow:0 0 30px red;
+}
+}
+
+@keyframes shake{
+0%{
+transform:translateX(-4px);
+}
+
+100%{
+transform:translateX(4px);
+}
+} 
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <h2>SweetSpot</h2>
+  <div class="nav-item active" onclick="showScreen('dashboard', this)">Dashboard</div>
+  <div class="nav-item" onclick="showScreen('sugar', this)">Blood Sugar</div>
+  <div class="nav-item" onclick="showScreen('pressure', this)">Blood Pressure</div>
+  <div class="nav-item" onclick="showScreen('diet', this)">Diet</div>
+  <div class="nav-item" onclick="showScreen('weight', this)">Weight</div>
+  <div class="nav-item" onclick="showScreen('profile', this)">Profile</div>
+</div>
+
+<div class="main">
+<header>
+  <div class="left-header" onclick="goProfile()">
+    <div class="profile"></div>
+    <div id="greeting">Hi, Alex</div>
+  </div>
+  <div class="toggle" onclick="toggleDark()">🌙 Dark Mode</div>
+</header>
+
+<!-- Dashboard -->
+<div id="dashboard" class="content screen active">
+
+  <div class="card">
+    <h3>Blood Sugar</h3>
+    <canvas id="sugarChart"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Blood Pressure</h3>
+    <canvas id="pressureChart"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Weight</h3>
+    <canvas id="weightChart"></canvas>
+  </div>
+
+  <div class="card">
+    <h3>Daily Blood Sugar</h3>
+    <canvas id="sugarSpeedometer" width="300" height="150"></canvas>
+    <p style="font-size:12px;color:gray;">Red = High risk, Yellow = Caution, Green = Normal range</p>
+  </div>
+
+  <div class="card">
+    <h3>Health Overview</h3>
+    <canvas id="overviewPie"></canvas>
+    <p style="font-size:12px;color:gray;">Simple breakdown of tracked categories</p>
+  </div>
+
+  <div class="card">
+    <h3>Apps</h3>
+    <p>YouTube <span id="yt" style="float:right;">✖</span></p>
+    <p>Instagram <span id="ig" style="float:right;">✖</span></p>
+    <p>TikTok <span id="tt" style="float:right;">✖</span></p>
+    <p style="font-size:12px;color:gray;">Apps show ✔ in green zone, ✖ in yellow/red zones.</p>
+  </div>
+
+</div>
+
+<!-- Sugar -->
+<div id="sugar" class="content screen">
+  <div class="card">
+    <h3>Blood Sugar Entry</h3>
+    <input type="number" id="sugarInput" placeholder="Enter glucose" min="0" max="300">
+    <canvas id="sugarChart2"></canvas>
+  </div>
+</div>
+
+<!-- BP -->
+<div id="pressure" class="content screen">
+  <div class="card">
+    <h3>Blood Pressure Entry</h3>
+    <input type="number" id="bpInput" placeholder="Enter systolic" min="0" max="300">
+    <canvas id="bpChart2"></canvas>
+  </div>
+</div>
+
+<!-- Diet -->
+<div id="diet" class="content screen">
+  <div class="card">
+    <h3>Diet Entry</h3>
+    <input type="text" id="dietInput" placeholder="What did you eat? (press Enter)">
+    <div style="margin-top:10px;font-size:13px;">
+      <p><strong>Breakfast:</strong> <span id="breakfast">—</span></p>
+      <p><strong>Snack 1:</strong> <span id="snack1">—</span></p>
+      <p><strong>Lunch:</strong> <span id="lunch">—</span></p>
+      <p><strong>Snack 2:</strong> <span id="snack2">—</span></p>
+      <p><strong>Dinner:</strong> <span id="dinner">—</span></p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Meal Recommendations</h3>
+
+    <p><strong>Low Carb Options</strong></p>
+    <p>• Grilled chicken salad</p>
+    <p>• Avocado & eggs</p>
+
+    <p><strong>High Protein</strong></p>
+    <p>• Chicken with vegetables</p>
+    <p>• Greek yogurt with nuts</p>
+
+    <p><strong>Balanced Meals</strong></p>
+    <p>• Brown rice + veggies + protein</p>
+    <p>• Whole grain sandwich + fruit</p>
+
+    <p><strong>Snacks</strong></p>
+    <p>• Apple with peanut butter</p>
+    <p>• Nuts or cheese sticks</p>
+
+    <p style="font-size:12px;color:gray;">Tip: Choose meals that help keep your blood sugar steady.</p>
+  </div>
+</div>
+
+<!-- Weight -->
+<div id="weight" class="content screen">
+  <div class="card">
+    <h3>Weight Entry</h3>
+    <input type="number" id="weightInput" placeholder="Enter weight">
+    <canvas id="weightChart2"></canvas>
+  </div>
+</div>
+
+<!-- Profile -->
+<div id="profile" class="content screen">
+  <div class="card">
+    <h3>Profile</h3>
+    <input type="text" id="nameInput" placeholder="Enter name">
+    <input type="number" id="ageInput" placeholder="Enter age">
+    <input type="number" id="heightInput" placeholder="Enter height (inches)">
+    <input type="number" id="weightProfileInput" placeholder="Enter weight (lbs)">
+    <button onclick="saveProfile()">Save</button>
+
+    <div style="margin-top:10px;font-size:13px;">
+      <p><strong>Age:</strong> <span id="ageDisplay">—</span></p>
+      <p><strong>Height:</strong> <span id="heightDisplay">—</span></p>
+      <p><strong>Weight:</strong> <span id="weightDisplay">—</span></p>
+    </div>
+  </div>
+</div>
+
+</div>
+<div class="alert-overlay" id="alertOverlay">
+
+<div class="alert-box">
+
+<h2 id="alertTitle">Warning</h2>
+
+<p id="alertMessage">
+Your blood sugar requires attention.
+</p>
+
+<div class="alert-buttons"></button>
+
+<button class="ignore-btn" onclick="ignoreAlert()">
+Ignore
+
+
+<button class="eat-btn" onclick="eatFood()">
+Eat Food
+</button>
+
+</div>
+
+</div>
+
+</div> 
+<script>
+function showScreen(id, el){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(el) el.classList.add('active');
+}
+
+function toggleDark(){
+  document.body.classList.toggle('dark');
+}
+
+function goProfile(){ showScreen('profile'); }
+
+function updateName(){
+  const name=document.getElementById('nameInput').value;
+  if(name) document.getElementById('greeting').innerText='Hi, '+name;
+}
+
+function saveProfile(){
+  const name=document.getElementById('nameInput').value;
+  const age=document.getElementById('ageInput').value;
+  const height=document.getElementById('heightInput').value;
+  const weight=document.getElementById('weightProfileInput').value;
+
+  if(name) document.getElementById('greeting').innerText='Hi, '+name;
+  if(age) document.getElementById('ageDisplay').innerText=age;
+  if(height) document.getElementById('heightDisplay').innerText=height+' in';
+  if(weight) document.getElementById('weightDisplay').innerText=weight+' lbs';
+}
+
+// clamp helper (0–300)
+function clamp(val){
+  return Math.max(0, Math.min(300, val));
+}
+
+function toggleX(box){
+  const mark = box.parentElement.querySelector('.mark');
+  if(mark){
+    mark.style.visibility = box.checked ? 'hidden' : 'visible';
+  }
+}
+
+// DATA
+const sugarData=[95,110,105,120,115,100,108];
+const bpData=[120,125,123,130,128,null,null];
+const weightData=[160,158,157,155];
+
+// CHARTS (0–300 LIMIT APPLIED)
+const sugarChart=new Chart(document.getElementById('sugarChart'),{
+  type:'line',
+  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{data:sugarData, tension:0.4}]},
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{min:0,max:300,title:{display:true,text:'mg/dL'}},
+      x:{title:{display:true,text:'Day of Week'}}
+    }
+  }
+});
+
+const sugarChart2=new Chart(document.getElementById('sugarChart2'),{
+  type:'line',
+  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{data:sugarData, tension:0.4}]},
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{min:0,max:300,title:{display:true,text:'mg/dL'}},
+      x:{title:{display:true,text:'Day of Week'}}
+    }
+  }
+});
+
+const bpChart=new Chart(document.getElementById('pressureChart'),{
+  type:'line',
+  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{data:bpData, tension:0.4}]},
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{min:0,max:300,title:{display:true,text:'mmHg'}},
+      x:{title:{display:true,text:'Day of Week'}}
+    }
+  }
+});
+
+const bpChart2=new Chart(document.getElementById('bpChart2'),{
+  type:'line',
+  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{data:bpData, tension:0.4}]},
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{min:0,max:300,title:{display:true,text:'mmHg'}},
+      x:{title:{display:true,text:'Day of Week'}}
+    }
+  }
+});
+
+const weightChart=new Chart(document.getElementById('weightChart'),{
+  type:'line',
+  data:{labels:['W1','W2','W3','W4'],datasets:[{data:weightData, tension:0.4}]},
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{title:{display:true,text:'lbs'}},
+      x:{title:{display:true,text:'Weeks'}}
+    }
+  }
+});
+
+const weightChart2=new Chart(document.getElementById('weightChart2'),{
+  type:'line',
+  data:{labels:['W1','W2','W3','W4'],datasets:[{data:weightData, tension:0.4}]},
+  options:{
+    plugins:{legend:{display:false}},
+    scales:{
+      y:{title:{display:true,text:'lbs'}},
+      x:{title:{display:true,text:'Weeks'}}
+    }
+  }
+});
+
+// PIE
+function avg(arr){
+  const f=arr.filter(v=>v!=null);
+  return f.length ? f.reduce((a,b)=>a+b,0)/f.length : 0;
+}
+
+const overviewPie=new Chart(document.getElementById('overviewPie'),{
+  type:'pie',
+  data:{
+    labels:['Blood Sugar','Blood Pressure','Weight'],
+    datasets:[{
+      data:[avg(sugarData),avg(bpData),avg(weightData)]
+    }]
+  }
+});
+
+// SPEEDOMETER
+const speedCanvas=document.getElementById('sugarSpeedometer');
+const speedCtx=speedCanvas.getContext('2d');
+
+function getZone(v){
+  if(v>=100 && v<150) return 'green';
+  return 'bad';
+}
+
+function updateAppsStatus(v){
+  const ok = getZone(v)==='green';
+  const sym = ok ? '✔' : '✖';
+  const yt=document.getElementById('yt');
+  const ig=document.getElementById('ig');
+  const tt=document.getElementById('tt');
+  if(yt) yt.innerText=sym;
+  if(ig) ig.innerText=sym;
+  if(tt) tt.innerText=sym;
+}
+
+function drawSpeedometer(value){
+  const max=250;
+  const val=Math.max(0,Math.min(value||0,max));
+
+  const w=speedCanvas.width;
+  const h=speedCanvas.height;
+
+  speedCtx.clearRect(0,0,w,h);
+
+  const cx=w/2;
+  const cy=h;
+  const r=100;
+
+  const start=Math.PI;
+  const end=2*Math.PI;
+  const span=end-start;
+  const seg=span/5;
+
+  function arc(color,a,b){
+    speedCtx.beginPath();
+    speedCtx.strokeStyle=color;
+    speedCtx.lineWidth=18;
+    speedCtx.arc(cx,cy,r,a,b);
+    speedCtx.stroke();
+  }
+
+  arc('#f44336', start, start+seg);
+  arc('#ffeb3b', start+seg, start+2*seg);
+  arc('#4caf50', start+2*seg, start+3*seg);
+  arc('#ffeb3b', start+3*seg, start+4*seg);
+  arc('#f44336', start+4*seg, end);
+
+  const ticks=[0,50,100,150,200,250];
+  speedCtx.fillStyle='#000';
+  speedCtx.font='10px Arial';
+
+  ticks.forEach(t=>{
+    const a=start+(t/max)*Math.PI;
+
+    const x1=cx+Math.cos(a)*(r-10);
+    const y1=cy+Math.sin(a)*(r-10);
+    const x2=cx+Math.cos(a)*(r+5);
+    const y2=cy+Math.sin(a)*(r+5);
+
+    speedCtx.beginPath();
+    speedCtx.moveTo(x1,y1);
+    speedCtx.lineTo(x2,y2);
+    speedCtx.lineWidth=2;
+    speedCtx.strokeStyle='#333';
+    speedCtx.stroke();
+
+    const lx=cx+Math.cos(a)*(r+20);
+    const ly=cy+Math.sin(a)*(r+20);
+
+    speedCtx.fillText(t,lx-10,ly+3);
+  });
+
+  const angle=start+(val/max)*Math.PI;
+
+  speedCtx.beginPath();
+  speedCtx.moveTo(cx,cy);
+  speedCtx.lineTo(cx+Math.cos(angle)*r,cy+Math.sin(angle)*r);
+  speedCtx.strokeStyle='#000';
+  speedCtx.lineWidth=3;
+  speedCtx.stroke();
+
+  speedCtx.beginPath();
+  speedCtx.arc(cx,cy,5,0,2*Math.PI);
+  speedCtx.fill();
+}
+
+drawSpeedometer(120);
+let ignoreCount=0;
+let foodIntervention = false; 
+
+function showAlert(title,msg,final=false){
+
+document.getElementById('alertOverlay').style.display='flex';
+
+document.getElementById('alertTitle').innerText=title;
+
+document.getElementById('alertMessage').innerText=msg;
+
+const buttons=document.querySelector('.alert-buttons');
+
+if(final){
+
+buttons.innerHTML=`
+<button onclick="closeAlert()" style="
+width:100%;
+background:red;
+color:white;
+padding:10px;
+border:none;
+border-radius:8px;
+font-weight:bold;
+">
+OK
+</button>
+`;
+
+}else{
+
+buttons.innerHTML=`
+
+<button class="ignore-btn" onclick="ignoreAlert()">
+Ignore
+</button>
+
+<button class="eat-btn" onclick="eatFood()">
+Eat Food
+</button>
+
+`;
+}
+}
+
+function closeAlert(){
+
+document.getElementById('alertOverlay').style.display='none';
+}
+
+function ignoreAlert(){
+
+ignoreCount++;
+
+closeAlert();
+}
+
+function eatFood(){
+ ignoreCount = 0;
+ foodIntervention = true; // mark that user took action
+ closeAlert();
+}
+
+function checkBloodSugarAlerts(v){
+
+/* GREEN ZONE */
+if(v >= 100 && v <= 150){
+
+ignoreCount = 0;
+
+closeAlert();
+
+if(foodIntervention){
+showSuccessPopup();
+}
+
+return;
+} 
+
+/* WARNING */
+
+if((v<100 || v>150) && ignoreCount===0){
+
+showAlert(
+'Blood Sugar Warning',
+'Your blood sugar requires attention.'
+);
+
+return;
+}
+
+/* CRITICAL */
+
+if((v<70 || v>220) && ignoreCount>=1){
+
+showAlert(
+'Critical State',
+'Your blood sugar is at a critical state. Please normalize your blood sugar.'
+);
+
+return;
+}
+
+/* FINAL */
+
+if((v<50 || v>260) && ignoreCount>=2){
+
+showAlert(
+'Emergency Alert',
+'Your blood sugar is in a dangerous range.',
+true
+);
+}
+
+function showSuccessPopup(){
+  const overlay = document.getElementById('alertOverlay');
+  const box = document.querySelector('.alert-box');
+  const title = document.getElementById('alertTitle');
+  const message = document.getElementById('alertMessage');
+  const buttons = document.querySelector('.alert-buttons');
+
+  overlay.style.display = 'flex';
+
+  box.style.border = '6px solid #4caf50';
+  box.style.boxShadow = '0 0 25px #4caf50';
+
+  title.innerText = 'Great Job!';
+  title.style.color = '#4caf50';
+
+  message.innerText = 'Nice job getting your blood sugar back to a normal range! You can now use your apps freely.';
+
+  buttons.innerHTML = `
+    <button onclick="closeSuccess()" style="
+      width:100%;
+      background:#4caf50;
+      color:white;
+      padding:10px;
+      border:none;
+      border-radius:8px;
+      font-weight:bold;
+    ">OK</button>
+  `;
+}
+
+function closeSuccess(){
+  const overlay = document.getElementById('alertOverlay');
+  const box = document.querySelector('.alert-box');
+
+  box.style.border = '6px solid red';
+  box.style.boxShadow = '0 0 25px red';
+
+  document.getElementById('alertTitle').style.color = 'red';
+
+  overlay.style.display = 'none';
+
+  foodIntervention = false;
+}
+// WEEK UPDATE
+function addWeeklyData(chart1,chart2,data,val,ref){
+  const v=clamp(val);
+
+  data[ref.value]=v;
+
+  chart1.data.datasets[0].data=data;
+  chart2.data.datasets[0].data=data;
+
+  chart1.update();
+  chart2.update();
+
+  ref.value++;
+
+  if(ref.value>=7){
+    ref.value=0;
+    for(let i=0;i<data.length;i++) data[i]=null;
+  }
+}
+
+const sugarRef={value:0};
+const bpRef={value:0};
+const weightRef={value:0};
+
+// DIET
+let mealIndex=0;
+const meals=['breakfast','snack1','lunch','snack2','dinner'];
+
+document.getElementById('dietInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){
+    const v=e.target.value.trim();
+    if(v){
+      document.getElementById(meals[mealIndex]).innerText=v;
+      mealIndex++;
+
+      if(mealIndex>=5){
+        setTimeout(()=>meals.forEach(m=>document.getElementById(m).innerText='—'),300);
+        mealIndex=0;
+      }
+
+      e.target.value='';
+    }
+  }
+});
+
+// INPUTS (0–300 enforced)
+
+document.getElementById('sugarInput').addEventListener('change',e=>{
+  const v=clamp(parseFloat(e.target.value));
+  if(!isNaN(v)){
+    addWeeklyData(sugarChart,sugarChart2,sugarData,v,sugarRef);
+    addWeeklyData(bpChart,bpChart2,bpData,v,bpRef);
+    drawSpeedometer(v);
+    updateAppsStatus(v);
+  }
+});
+
+document.getElementById('sugarInput').addEventListener('change',e=>{
+
+const v=clamp(parseFloat(e.target.value));
+
+if(!isNaN(v)){
+
+addWeeklyData(
+sugarChart,
+sugarChart2,
+sugarData,
+v,
+sugarRef
+);
+
+drawSpeedometer(v);
+
+updateAppsStatus(v);
+
+checkBloodSugarAlerts(v);
+}
+}); 
+
+document.getElementById('weightInput').addEventListener('change',e=>{
+  const v=clamp(parseFloat(e.target.value));
+  if(!isNaN(v)) addWeeklyData(weightChart,weightChart2,weightData,v,weightRef);
+});
+</script>
+
+</body>
+</html>
+
+
