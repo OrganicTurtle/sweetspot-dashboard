@@ -1,4 +1,6 @@
 
+
+ 
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -271,7 +273,7 @@ transform:translateX(4px);
 Your blood sugar requires attention.
 </p>
 
-<div class="alert-buttons"></button>
+<div class="alert-buttons">
 
 <button class="ignore-btn" onclick="ignoreAlert()">
 Ignore
@@ -425,7 +427,8 @@ const overviewPie=new Chart(document.getElementById('overviewPie'),{
 
 // SPEEDOMETER
 const speedCanvas=document.getElementById('sugarSpeedometer');
-const speedCtx=speedCanvas.getContext('2d');
+const speedCtx = speedCanvas ? speedCanvas.getContext('2d') : null;
+
 
 function getZone(v){
   if(v>=100 && v<150) return 'green';
@@ -580,56 +583,50 @@ function eatFood(){
 
 function checkBloodSugarAlerts(v){
 
-/* GREEN ZONE */
-if(v >= 100 && v <= 150){
+  /* GREEN ZONE */
+  if(v >= 100 && v <= 150){
 
-ignoreCount = 0;
+    ignoreCount = 0;
 
-closeAlert();
+    closeAlert();
 
-if(foodIntervention){
-showSuccessPopup();
-}
+    if(foodIntervention){
+      showSuccessPopup();
+    }
 
-return;
-} 
+    return;
+  }
 
-/* WARNING */
+  /* WARNING */
+  if((v<100 || v>150) && ignoreCount===0){
+    showAlert(
+      'Blood Sugar Warning',
+      'Your blood sugar requires attention.'
+    );
+    return;
+  }
 
-if((v<100 || v>150) && ignoreCount===0){
+  /* CRITICAL */
+  if((v<70 || v>220) && ignoreCount>=1){
+    showAlert(
+      'Critical State',
+      'Your blood sugar is at a critical state. Please normalize your blood sugar.'
+    );
+    return;
+  }
 
-showAlert(
-'Blood Sugar Warning',
-'Your blood sugar requires attention.'
-);
-
-return;
-}
-
-/* CRITICAL */
-
-if((v<70 || v>220) && ignoreCount>=1){
-
-showAlert(
-'Critical State',
-'Your blood sugar is at a critical state. Please normalize your blood sugar.'
-);
-
-return;
-}
-
-/* FINAL */
-
-if((v<50 || v>260) && ignoreCount>=2){
-
-showAlert(
-'Emergency Alert',
-'Your blood sugar is in a dangerous range.',
-true
-);
-}
+  /* FINAL */
+  if((v<50 || v>260) && ignoreCount>=2){
+    showAlert(
+      'Emergency Alert',
+      'Your blood sugar is in a dangerous range.',
+      true
+    );
+  }
+}  
 
 function showSuccessPopup(){
+
   const overlay = document.getElementById('alertOverlay');
   const box = document.querySelector('.alert-box');
   const title = document.getElementById('alertTitle');
@@ -720,16 +717,6 @@ document.getElementById('dietInput').addEventListener('keydown',e=>{
 // INPUTS (0–300 enforced)
 
 document.getElementById('sugarInput').addEventListener('change',e=>{
-  const v=clamp(parseFloat(e.target.value));
-  if(!isNaN(v)){
-    addWeeklyData(sugarChart,sugarChart2,sugarData,v,sugarRef);
-    addWeeklyData(bpChart,bpChart2,bpData,v,bpRef);
-    drawSpeedometer(v);
-    updateAppsStatus(v);
-  }
-});
-
-document.getElementById('sugarInput').addEventListener('change',e=>{
 
 const v=clamp(parseFloat(e.target.value));
 
@@ -759,5 +746,7 @@ document.getElementById('weightInput').addEventListener('change',e=>{
 
 </body>
 </html>
+
+
 
 
