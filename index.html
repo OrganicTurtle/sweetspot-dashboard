@@ -295,7 +295,7 @@ Your blood sugar requires attention.
 
 <div class="alert-buttons">
 
-<button class="ignore-btn" onclick="ignoreAlert()">
+onclick="ignoreAlert()">
 Ignore
 </button>
 
@@ -482,7 +482,12 @@ const overviewPie=new Chart(document.getElementById('overviewPie'),{
   data:{
     labels:['Blood Sugar','Blood Pressure','Weight'],
     datasets:[{
-      data:[avg(sugarData),avg(bpData),avg(weightData)]
+     data:[
+  avg(sugarData),
+  avg(bpSysData),
+  avg(weightData)
+]
+
     }]
   }
 });
@@ -615,9 +620,10 @@ OK
 
 buttons.innerHTML=`
 
-<button class="ignore-btn" onclick="ignoreAlert()">
+onclick="ignoreAlert()">
 Ignore
 </button>
+
 
 <button class="eat-btn" onclick="eatFood()">
 Eat Food
