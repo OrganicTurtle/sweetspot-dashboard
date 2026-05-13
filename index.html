@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,7 +40,11 @@ header { background:white; padding:15px 20px; display:flex; justify-content:spac
 
 input { margin-top:8px; padding:6px; width:100%; }
 button { margin-top:8px; padding:6px; cursor:pointer; }
-canvas { max-height:120px; }
+canvas {
+  width:100% !important;
+  height:250px !important;
+}
+
 
 .screen { display:none; }
 .screen.active { display:grid; }
@@ -191,6 +196,7 @@ Reminder: When your glucose levels are at a dangerous or unusual state, your unp
 
 </div>
 
+</div>
 <!-- Sugar -->
 <div id="sugar" class="content screen">
   <div class="card">
@@ -295,7 +301,7 @@ Your blood sugar requires attention.
 
 <div class="alert-buttons">
 
-onclick="ignoreAlert()">
+<button class="ignore-btn" onclick="ignoreAlert()">
 Ignore
 </button>
 
@@ -311,10 +317,22 @@ Eat Food
 </div> 
 <script>
 function showScreen(id, el){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+
+  document.querySelectorAll('.screen')
+    .forEach(s => s.classList.remove('active'));
+
+  document.querySelectorAll('.nav-item')
+    .forEach(n => n.classList.remove('active'));
+
   document.getElementById(id).classList.add('active');
+
   if(el) el.classList.add('active');
+
+  setTimeout(() => {
+    Chart.helpers.each(Chart.instances, function(instance){
+      instance.resize();
+    });
+  }, 100);
 }
 
 function toggleDark(){
@@ -477,20 +495,20 @@ function avg(arr){
   return f.length ? f.reduce((a,b)=>a+b,0)/f.length : 0;
 }
 
-const overviewPie=new Chart(document.getElementById('overviewPie'),{
+const overviewPie = new Chart(document.getElementById('overviewPie'),{
   type:'pie',
   data:{
     labels:['Blood Sugar','Blood Pressure','Weight'],
     datasets:[{
-     data:[
-  avg(sugarData),
-  avg(bpSysData),
-  avg(weightData)
-]
-
+      data:[
+        avg(sugarData),
+        avg(bpSysData),
+        avg(weightData)
+      ]
     }]
   }
 });
+
 
 // SPEEDOMETER
 const speedCanvas=document.getElementById('sugarSpeedometer');
@@ -618,18 +636,16 @@ OK
 
 }else{
 
-buttons.innerHTML=`
-
-onclick="ignoreAlert()">
+buttons.innerHTML = `
+<button class="ignore-btn" onclick="ignoreAlert()">
 Ignore
 </button>
-
 
 <button class="eat-btn" onclick="eatFood()">
 Eat Food
 </button>
-
 `;
+
 }
 }
 
@@ -757,7 +773,7 @@ function addWeeklyData(chart1,chart2,data,val,ref){
 
   ref.value++;
 
-  if(ref.value>=7){
+if(ref.value>=data.length){
     ref.value=0;
     for(let i=0;i<data.length;i++) data[i]=null;
   }
@@ -862,5 +878,7 @@ document.getElementById('weightInput').addEventListener('change',e=>{
 
 </body>
 </html>
+
+
 
 
