@@ -173,8 +173,22 @@ transform:translateX(4px);
     <p>YouTube <span id="yt" style="float:right;">✖</span></p>
     <p>Instagram <span id="ig" style="float:right;">✖</span></p>
     <p>TikTok <span id="tt" style="float:right;">✖</span></p>
-    <p style="font-size:12px;color:gray;">Apps show ✔ in green zone, ✖ in yellow/red zones.</p>
-  </div>
+<p style="font-size:12px;color:gray;">
+Apps show ✔ in green zone, ✖ in yellow/red zones.
+</p>
+
+<p style="
+font-size:12px;
+margin-top:10px;
+padding:10px;
+border-radius:8px;
+background:#fff3cd;
+color:#856404;
+line-height:1.5;
+">
+Reminder: When your glucose levels are at a dangerous or unusual state, your unproductive apps will be blocked until levels return to a normal state.
+</p>
+
 
 </div>
 
@@ -191,10 +205,19 @@ transform:translateX(4px);
 <div id="pressure" class="content screen">
   <div class="card">
     <h3>Blood Pressure Entry</h3>
-    <input type="number" id="bpInput" placeholder="Enter systolic" min="0" max="300">
+
+    <input type="number" id="bpSysInput" placeholder="Systolic (top number)" min="70" max="220">
+
+    <input type="number" id="bpDiaInput" placeholder="Diastolic (bottom number)" min="40" max="140">
+
     <canvas id="bpChart2"></canvas>
+
+    <p style="font-size:12px;color:gray;">
+      Normal blood pressure is around 120/80
+    </p>
   </div>
 </div>
+
 
 <!-- Diet -->
 <div id="diet" class="content screen">
@@ -331,7 +354,9 @@ function toggleX(box){
 
 // DATA
 const sugarData=[95,110,105,120,115,100,108];
-const bpData=[120,125,123,130,128,null,null];
+const bpSysData=[120,122,118,125,121,119,123];
+const bpDiaData=[80,82,79,84,81,78,80];
+
 const weightData=[160,158,157,155];
 
 // CHARTS (0–300 LIMIT APPLIED)
@@ -361,27 +386,66 @@ const sugarChart2=new Chart(document.getElementById('sugarChart2'),{
 
 const bpChart=new Chart(document.getElementById('pressureChart'),{
   type:'line',
-  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{data:bpData, tension:0.4}]},
+  data:{
+    labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets:[
+      {
+        label:'Systolic',
+        data:bpSysData,
+        tension:0.4
+      },
+      {
+        label:'Diastolic',
+        data:bpDiaData,
+        tension:0.4
+      }
+    ]
+  },
   options:{
-    plugins:{legend:{display:false}},
     scales:{
-      y:{min:0,max:300,title:{display:true,text:'mmHg'}},
-      x:{title:{display:true,text:'Day of Week'}}
+      y:{
+        min:40,
+        max:200,
+        title:{
+          display:true,
+          text:'mmHg'
+        }
+      }
     }
   }
 });
 
 const bpChart2=new Chart(document.getElementById('bpChart2'),{
   type:'line',
-  data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{data:bpData, tension:0.4}]},
+  data:{
+    labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+    datasets:[
+      {
+        label:'Systolic',
+        data:bpSysData,
+        tension:0.4
+      },
+      {
+        label:'Diastolic',
+        data:bpDiaData,
+        tension:0.4
+      }
+    ]
+  },
   options:{
-    plugins:{legend:{display:false}},
     scales:{
-      y:{min:0,max:300,title:{display:true,text:'mmHg'}},
-      x:{title:{display:true,text:'Day of Week'}}
+      y:{
+        min:40,
+        max:200,
+        title:{
+          display:true,
+          text:'mmHg'
+        }
+      }
     }
   }
 });
+
 
 const weightChart=new Chart(document.getElementById('weightChart'),{
   type:'line',
@@ -742,6 +806,84 @@ checkBloodSugarAlerts(v);
 }
 }); 
 
+function updateBloodPressure(){
+
+  const sys = parseFloat(document.getElementById('bpSysInput').value);
+  const dia = parseFloat(document.getElementById('bpDiaInput').value);
+
+  if(!isNaN(sys) && !isNaN(dia)){
+
+    bpSysData[bpRef.value] = sys;
+    bpDiaData[bpRef.value] = dia;
+
+    bpChart.data.datasets[0].data = bpSysData;
+    bpChart.data.datasets[1].data = bpDiaData;
+
+    bpChart2.data.datasets[0].data = bpSysData;
+    bpChart2.data.datasets[1].data = bpDiaData;
+
+    bpChart.update();
+    bpChart2.update();
+
+    bpRef.value++;
+
+    if(bpRef.value >= 7){
+
+      bpRef.value = 0;
+
+      for(let i=0;i<7;i++){
+        bpSysData[i] = null;
+        bpDiaData[i] = null;
+      }
+
+      bpChart.update();
+      bpChart2.update();
+    }
+  }
+}
+
+document.getElementById('bpSysInput')
+.addEventListener('change', updateBloodPressure);
+
+document.getElementById('bpDiaInput')
+.addEventListener('change', updateBloodPressure);
+
+
+  const sys = parseFloat(document.getElementById('bpSysInput').value);
+  const dia = parseFloat(document.getElementById('bpDiaInput').value);
+
+  if(!isNaN(sys) && !isNaN(dia)){
+
+    bpSysData[bpRef.value] = sys;
+    bpDiaData[bpRef.value] = dia;
+
+    bpChart.data.datasets[0].data = bpSysData;
+    bpChart.data.datasets[1].data = bpDiaData;
+
+    bpChart2.data.datasets[0].data = bpSysData;
+    bpChart2.data.datasets[1].data = bpDiaData;
+
+    bpChart.update();
+    bpChart2.update();
+
+    bpRef.value++;
+
+  if(bpRef.value >= 7){
+  bpRef.value = 0;
+
+  for(let i=0;i<7;i++){
+    bpSysData[i] = null;
+    bpDiaData[i] = null;
+  }
+
+  bpChart.update();
+  bpChart2.update();
+}
+
+
+  }
+});
+
 document.getElementById('weightInput').addEventListener('change',e=>{
   const v=clamp(parseFloat(e.target.value));
   if(!isNaN(v)) addWeeklyData(weightChart,weightChart2,weightData,v,weightRef);
@@ -750,6 +892,5 @@ document.getElementById('weightInput').addEventListener('change',e=>{
 
 </body>
 </html>
-
 
 
