@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -298,6 +297,7 @@ Your blood sugar requires attention.
 
 <button class="ignore-btn" onclick="ignoreAlert()">
 Ignore
+</button>
 
 
 <button class="eat-btn" onclick="eatFood()">
@@ -847,42 +847,6 @@ document.getElementById('bpSysInput')
 
 document.getElementById('bpDiaInput')
 .addEventListener('change', updateBloodPressure);
-
-
-  const sys = parseFloat(document.getElementById('bpSysInput').value);
-  const dia = parseFloat(document.getElementById('bpDiaInput').value);
-
-  if(!isNaN(sys) && !isNaN(dia)){
-
-    bpSysData[bpRef.value] = sys;
-    bpDiaData[bpRef.value] = dia;
-
-    bpChart.data.datasets[0].data = bpSysData;
-    bpChart.data.datasets[1].data = bpDiaData;
-
-    bpChart2.data.datasets[0].data = bpSysData;
-    bpChart2.data.datasets[1].data = bpDiaData;
-
-    bpChart.update();
-    bpChart2.update();
-
-    bpRef.value++;
-
-  if(bpRef.value >= 7){
-  bpRef.value = 0;
-
-  for(let i=0;i<7;i++){
-    bpSysData[i] = null;
-    bpDiaData[i] = null;
-  }
-
-  bpChart.update();
-  bpChart2.update();
-}
-
-
-  }
-});
 
 document.getElementById('weightInput').addEventListener('change',e=>{
   const v=clamp(parseFloat(e.target.value));
